@@ -12,10 +12,19 @@
            ssize_t nread;
 	   char searchterm[100];
 
-           if (argc < 3) {
+           if (argc < 2) {
                fprintf(stderr, "%s: Searchterm[file...]\n", argv[0]);
                exit(1);
            }
+	   if(argc ==2){
+		char statement[100];
+		printf("Enter a statement: ");
+		fgets (statement,40,stdin);
+		strcpy(searchterm, argv[1]);
+		if(strstr(statement,searchterm) != NULL){
+			printf("%s is found in the line: %s\n",searchterm,statement);
+		}
+	   }
 	for(int i=2;i<argc;i++){
            stream = fopen(argv[i], "r");
            if (stream == NULL) {
