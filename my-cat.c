@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 int main(int argc, char *argv[]) {
 if (argc >=2){
    int i;
    for(i=1;i<argc;i = i+1){
 	FILE *fp = fopen(argv[i],"r");
 	if(fp == NULL){
-	  printf("Cannot open file %d, %s \n",i,argv[i]);
+	  printf("my-cat: Cannot open file %d, %s \n",i,argv[i]);
+	  perror("fopen");
 	  exit(1);
 
 	}else
@@ -25,10 +25,12 @@ if (argc >=2){
 	   printf("________________________________\n\n");
 	 
 	}
+	fclose(fp);
    }
+   
    return 0; 
 }else{
-   printf("No file passed");
+   printf("No file passed \n");
    exit(0);
 }
 
