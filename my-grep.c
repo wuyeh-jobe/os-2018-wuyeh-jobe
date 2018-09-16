@@ -20,9 +20,15 @@
 		char statement[100];
 		printf("Enter a statement: ");
 		fgets (statement,40,stdin);
+
+		/* remove newline, if present */
+		int n = strlen(statement)-1;
+		if( statement[ n ] == '\n') 
+		      statement[n] = '\0';
 		strcpy(searchterm, argv[1]);
 		if(strstr(statement,searchterm) != NULL){
-			printf("%s is found in the line: %s\n",searchterm,statement);
+			printf("'%s' is found in: %s\n",searchterm,statement);
+			exit(0);
 		}
 	   }
 	for(int i=2;i<argc;i++){
@@ -41,9 +47,9 @@
 		//printf("%s\n",strstr(term2,term));
 
 		if(strstr(line,searchterm) != NULL){
-			printf("%s is found in the line: %s\n",searchterm,line);
+			printf("'%s' is found in: %s\n",searchterm,line);
 		}
-		
+		 
            }
 	}
            free(line);
