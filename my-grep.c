@@ -18,18 +18,13 @@
            }
 	   if(argc ==2){
 		char statement[100];
-		printf("Enter a statement: ");
 		fgets (statement,40,stdin);
 
-		/* remove newline, if present */
-		int n = strlen(statement)-1;
-		if( statement[ n ] == '\n') 
-		      statement[n] = '\0';
 		strcpy(searchterm, argv[1]);
 		if(strstr(statement,searchterm) != NULL){
-			printf("'%s' is found in: %s\n",searchterm,statement);
-			exit(0);
+			printf("%s",statement);
 		}
+		exit(0);
 	   }
 	for(int i=2;i<argc;i++){
            stream = fopen(argv[i], "r");
@@ -41,13 +36,14 @@
 	   
 	   strcpy(searchterm, argv[1]);
            while ((nread = getline(&line, &len, stream)) != -1) {
-              // printf("Retrieved line of length %zu:\n", nread);
-               //fwrite(line, nread, 1, stdout);
-		//int result = strcmp(term2,term);
-		//printf("%s\n",strstr(term2,term));
 
 		if(strstr(line,searchterm) != NULL){
-			printf("'%s' is found in: %s\n",searchterm,line);
+		     if(argc ==3){
+			printf("%s",line);
+			}
+		     else{
+			printf("%s: %s",argv[i],line);
+			}
 		}
 		 
            }
