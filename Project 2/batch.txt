@@ -1,0 +1,4 @@
+ls
+mkdir wuyeh
+cd wuyeh
+mkdir try
