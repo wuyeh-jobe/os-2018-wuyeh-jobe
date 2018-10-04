@@ -32,15 +32,19 @@ int main(int argc, char *argv[])
     char *line = NULL;
  	size_t len = 32;
     ssize_t nread;
+    char *paths[10];// = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL ,NULL };
+    //paths = calloc(10,sizeof(paths));
 
 	if (argc == 1){
+		paths[0] = "/bin";
+		paths[1] = "/usr/bin";
+		int pathsCount = 2;
         while(1){
 			printf("%s", "wish> ");
 			/* Get input from command line*/
 			getline (&line,&len,stdin);
 			//Remove new line chracter using defined funtion above
-			remove_newline_ch(line);
-
+			remove_newline_ch(line);			
 			//stores space, used as break point
 			const char s[2] = " ";
 			//Array to store arguments
@@ -58,8 +62,22 @@ int main(int argc, char *argv[])
 		      token = strtok(NULL, s);
 		   }
 
+		   
+
+			if (strcmp(arg[0], "path") == 0){
+				//memset(arr, 0, sizeof(arr));
+				pathsCount = 0;
+				for(int j = 1;j<count;j++){
+						paths[j-1] = malloc(strlen(arg[j])+1);
+						strcpy(paths[j-1], arg[j]);
+						pathsCount = pathsCount +1;
+						//printf("%s\n", paths[j-1]);
+				}
+				
+			}
+
 		    /* Compare the two strings provided */
-		    if(strcmp(arg[0], "exit") == 0){
+		    else if(strcmp(arg[0], "exit") == 0){
 				exit(0);
 			}
 			else if (strcmp(arg[0], "cd") == 0)
@@ -85,15 +103,7 @@ int main(int argc, char *argv[])
 			    for (int i = 1; i<11;i++){
 			    	array[i]=NULL;
 			    }
-				char *path1 = concat("/usr/bin/",arg[0]);
-				char *path2 = concat("/bin/",arg[0]);
-				int flag = 0; //check if path1 or path2 is accessed
-				if(access(path1,X_OK)==0){
-					flag = 1;
-				}
-				if(access(path2,X_OK)==0){
-					flag = 2;
-				}
+
 				//Put arguments in array for execv
 				if(count>1){
 					for(int i=1;i<count;i++){
@@ -102,18 +112,19 @@ int main(int argc, char *argv[])
 				}
 
 				int rc = fork();
-
 				if (rc==0){
-					if (flag == 1){
-						array[0] = path1;
-						execv(path1, array);
-					}
-					else if(flag == 2){
-						array[0] = path2;
-						execv(path2, array);
+					for (int k = 0;k<pathsCount;k++){
+						char *pathC = concat(paths[k],"/");
+						char *path = concat(pathC,arg[0]);
+						array[0] = path;
+						//printf("%s\n", paths[0]);
+						if (access(path,X_OK)==0){
+							execv(path, array);
+						}
 					}
 					
-					printf("%s\n", "Problem!");
+					
+					printf("%s\n", "Specify the path!");
 				}
 				else
 				{
