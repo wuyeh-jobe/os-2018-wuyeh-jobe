@@ -18,7 +18,7 @@ char* concat(const char *s1, const char *s2)
     const size_t len1 = strlen(s1);
     const size_t len2 = strlen(s2);
     char *result = malloc(len1 + len2 + 1); // +1 for the null-terminator
-    // in real code you would check for errors in malloc here
+    // in real co de you would check for errors in malloc here
     memcpy(result, s1, len1);
     memcpy(result + len1, s2, len2 + 1); // +1 to copy the null-terminator
     return result;
@@ -32,8 +32,7 @@ int main(int argc, char *argv[])
     char *line = NULL;
  	size_t len = 32;
     ssize_t nread;
-    char *paths[10];// = { NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL ,NULL };
-    //paths = calloc(10,sizeof(paths));
+    char *paths[10];
 
 	if (argc == 1){
 		paths[0] = "/bin";
@@ -62,16 +61,12 @@ int main(int argc, char *argv[])
 		      token = strtok(NULL, s);
 		   }
 
-		   
-
 			if (strcmp(arg[0], "path") == 0){
-				//memset(arr, 0, sizeof(arr));
 				pathsCount = 0;
 				for(int j = 1;j<count;j++){
 						paths[j-1] = malloc(strlen(arg[j])+1);
 						strcpy(paths[j-1], arg[j]);
 						pathsCount = pathsCount +1;
-						//printf("%s\n", paths[j-1]);
 				}
 				
 			}
@@ -104,10 +99,22 @@ int main(int argc, char *argv[])
 			    	array[i]=NULL;
 			    }
 
+				
+				int redirect = 0; //For checking if the redirect symbol is found
+				char *filename; // get the filename if it's found
 				//Put arguments in array for execv
 				if(count>1){
 					for(int i=1;i<count;i++){
-						array[i] = arg[i];
+						if (strcmp(arg[i], ">") != 0){
+							array[i] = arg[i];
+						}
+						else{
+							redirect = 1;
+							i++;
+							filename = arg[i];
+
+						}
+						
 					}
 				}
 
@@ -117,12 +124,20 @@ int main(int argc, char *argv[])
 						char *pathC = concat(paths[k],"/");
 						char *path = concat(pathC,arg[0]);
 						array[0] = path;
-						//printf("%s\n", paths[0]);
 						if (access(path,X_OK)==0){
+
+							//redirect output to the file
+
+							if (redirect == 1){
+								FILE* file = fopen(filename, "w+");
+							   dup2(fileno(file), fileno(stdout));
+							   dup2(fileno(file), fileno(stderr));
+
+							   fclose(file);
+							}
 							execv(path, array);
 						}
-					}
-					
+					}				
 					
 					printf("%s\n", "Specify the path!");
 				}
