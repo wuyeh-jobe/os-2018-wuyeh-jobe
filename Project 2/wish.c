@@ -4,7 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
-
+#include <pthread.h> 
 
 void remove_newline_ch(char *line)
 {
@@ -24,9 +24,15 @@ char* concat(const char *s1, const char *s2)
     return result;
 }
 
-void executeCommands(char *line){
+void error(){
+	char error_message[30] = "An error has occurred\n";
+    write(STDERR_FILENO, error_message, strlen(error_message)); 
+}
+volatile int running_threads = 0;
+pthread_mutex_t running_mutex = PTHREAD_MUTEX_INITIALIZER;
+void *executeCommands(void *l){
     char *paths[10];
-
+    char *line = (char *) l;
     paths[0] = "/bin";
 	paths[1] = "/usr/bin";
 	int pathsCount = 2;
@@ -42,42 +48,38 @@ void executeCommands(char *line){
    /* get the first token */
    token = strtok(line, s);
    int count = 0;
-
 	/* get tokens and add them into the array */
    while( token != NULL ) {
       arg[count] = token;
       count = count+1;
       token = strtok(NULL, s);
    }
-
 	if (strcmp(arg[0], "path") == 0){
 		pathsCount = 0;
 		for(int j = 1;j<count;j++){
 				paths[j-1] = malloc(strlen(arg[j])+1);
 				strcpy(paths[j-1], arg[j]);
 				pathsCount = pathsCount +1;
-		}
-		
+		}	
 	}
-
     /* Compare the two strings provided */
     else if(strcmp(arg[0], "exit") == 0){
 		exit(0);
 	}
 	else if (strcmp(arg[0], "cd") == 0)
 	{
-		
 	   if (count==2){
 	   	if (chdir(arg[1])==0){
 	   		printf("%s\n","in folder now");
 	   	}
 	   	else{
-	   		printf("%s\n","Folder not available");
+	   		error();
+	   		//printf("%s\n","Folder not available");
 	   	}
-
 	   }
 	   else{
-	      	printf("%s\n", "Error: cd takes only one argument");
+	   		error();
+	      	//printf("%s\n", "Error: cd takes only one argument");
 	   }
 	}
 	else{
@@ -86,9 +88,7 @@ void executeCommands(char *line){
 	    //Fill above array with nulls
 	    for (int i = 1; i<11;i++){
 	    	array[i]=NULL;
-	    }
-
-		
+	    }		
 		int redirect = 0; //For checking if the redirect symbol is found
 		char *filename; // get the filename if it's found
 		//Put arguments in array for execv
@@ -101,12 +101,9 @@ void executeCommands(char *line){
 					redirect = 1;
 					i++;
 					filename = arg[i];
-
 				}
-				
 			}
 		}
-
 		int rc = fork();
 		if (rc==0){
 			for (int k = 0;k<pathsCount;k++){
@@ -127,55 +124,121 @@ void executeCommands(char *line){
 					execv(path, array);
 				}
 			}				
-			
-			printf("%s\n", "Specify the path!");
+			//printf("%s\n", "Specify the path!");
+			error();
 		}
 		else
 		{
 			wait(NULL);
 		}
-
 	}
-
-
+	pthread_mutex_lock(&running_mutex);
+    running_threads--;
+    pthread_mutex_unlock(&running_mutex);
 }
 
-int main(int argc, char *argv[])
-{
-	FILE *stream;
-    char *line = NULL;
- 	size_t len = 32;
-    ssize_t nread;
+int main(int argc, char *argv[]) 
+{ 
+		FILE *stream;
+		char *line = NULL;
+		size_t len = 32;
+    	ssize_t nread;
+    	if (argc==1)
+    	{
+    		while(1){
+				printf("%s", "wish> ");
+				/* Get input from command line*/
+				getline (&line,&len,stdin);
+				//Remove new line chracter using defined funtion above
+				remove_newline_ch(line);	
+				const char s[2] = "&";
+				//Array to store arguments
+				char *commands[10];
+				//stores tokens from strings
+				char *token;
+			   /* get the first token */
+			   token = strtok(line, s);
+			   int count = 0;
 
-	if (argc == 1){
-        while(1){
-			printf("%s", "wish> ");
-			/* Get input from command line*/
-			getline (&line,&len,stdin);
-			//Remove new line chracter using defined funtion above
-			remove_newline_ch(line);			
-			executeCommands(line);
-	   }
-	    
-	}
-	else if(argc == 2){
-		stream = fopen(argv[1], "r");
-		if (stream == NULL) {
-		    printf("my-grep: cannot open file\n");
-		    perror("fopen");
-		    exit(1);
-		 }
-		 while ((nread = getline(&line, &len, stream)) != -1) {
-		    //printf("%s", line);		
-		    remove_newline_ch(line);
-		    executeCommands(line);
+				/* get tokens and add them into the array */
+			   while( token != NULL ) {
+			      commands[count] = token;
+			      //printf("%s\n", commands[count]);
+			      count = count+1;
+			      token = strtok(NULL, s);
+			   }
+			   //printf("%d\n", count);
+			   	int i,j; 
+				pthread_t thread_id[count]; 
 
-		 }//end of the while loop
-	}//else if ends here
-	else{
-		printf("%s\n", "Error: Only one or no argumennt allowed");	
-	}
-	return 0;
-}
+				 for (i = 0; i < count; i++){
+				 	pthread_create(&thread_id[i], NULL, executeCommands, commands[i]); 
+				 	pthread_mutex_lock(&running_mutex);
+				    running_threads++;
+				    pthread_mutex_unlock(&running_mutex);
+				 	
+				 }
+				 //pthread_exit(NULL); 
+
+				   /*for(j=0; j < count; j++)
+				   {
+				      pthread_join( thread_id[j], NULL);
+				   }	 */  		
+				while (running_threads > 0)
+				  {
+				     sleep(1);
+				  }
+			}
+		}
+		else if(argc ==2){
+			stream = fopen(argv[1], "r");
+			if (stream == NULL) {
+				error();
+			    //printf("my-grep: cannot open file\n");
+			    //perror("fopen");
+			    exit(1);
+			 }
+			 while ((nread = getline(&line, &len, stream)) != -1) {		
+			    remove_newline_ch(line);
+			    const char s[2] = "&";
+				//Array to store arguments
+				char *commands[10];
+				//stores tokens from strings
+				char *token;
+			   /* get the first token */
+			   token = strtok(line, s);
+			   int count = 0;
+
+				/* get tokens and add them into the array */
+			   while( token != NULL ) {
+			      commands[count] = token;
+			      count = count+1;
+			      token = strtok(NULL, s);
+			   }
+			   	int i,j; 
+				pthread_t thread_id[count];
+				 for (i = 0; i < count; i++){
+				 	pthread_create(&thread_id[i], NULL, executeCommands, commands[i]); 
+				 	pthread_mutex_lock(&running_mutex);
+				    running_threads++;
+				    pthread_mutex_unlock(&running_mutex);
+				 	
+				 }		
+				while (running_threads > 0)
+				  {
+				     sleep(1);
+				  }
+
+			 }//end of the while loop
+		}
+		else{
+			printf("%s\n", "Only two arguments are allowed");
+		}
+
+	 return 0; 
+} 
+
+	
+
 
 

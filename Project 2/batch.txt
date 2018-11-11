@@ -1,4 +1,4 @@
-ls > jobe.txt
+ls > jobe.txt & ls
 mkdir wuyeh
 cd wuyeh
 mkdir try
