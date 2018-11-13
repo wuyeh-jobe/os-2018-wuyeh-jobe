@@ -28,8 +28,6 @@ void error(){
 	char error_message[30] = "An error has occurred\n";
     write(STDERR_FILENO, error_message, strlen(error_message)); 
 }
-volatile int running_threads = 0;
-pthread_mutex_t running_mutex = PTHREAD_MUTEX_INITIALIZER;
 void *executeCommands(void *l){
     char *paths[10];
     char *line = (char *) l;
@@ -132,9 +130,6 @@ void *executeCommands(void *l){
 			wait(NULL);
 		}
 	}
-	pthread_mutex_lock(&running_mutex);
-    running_threads--;
-    pthread_mutex_unlock(&running_mutex);
 }
 
 int main(int argc, char *argv[]) 
@@ -173,29 +168,19 @@ int main(int argc, char *argv[])
 
 				 for (i = 0; i < count; i++){
 				 	pthread_create(&thread_id[i], NULL, executeCommands, commands[i]); 
-				 	pthread_mutex_lock(&running_mutex);
-				    running_threads++;
-				    pthread_mutex_unlock(&running_mutex);
 				 	
 				 }
-				 //pthread_exit(NULL); 
 
-				   /*for(j=0; j < count; j++)
+				   for(j=0; j < count; j++)
 				   {
 				      pthread_join( thread_id[j], NULL);
-				   }	 */  		
-				while (running_threads > 0)
-				  {
-				     sleep(1);
-				  }
+				   }  		
 			}
 		}
 		else if(argc ==2){
 			stream = fopen(argv[1], "r");
 			if (stream == NULL) {
 				error();
-			    //printf("my-grep: cannot open file\n");
-			    //perror("fopen");
 			    exit(1);
 			 }
 			 while ((nread = getline(&line, &len, stream)) != -1) {		
@@ -218,16 +203,12 @@ int main(int argc, char *argv[])
 			   	int i,j; 
 				pthread_t thread_id[count];
 				 for (i = 0; i < count; i++){
-				 	pthread_create(&thread_id[i], NULL, executeCommands, commands[i]); 
-				 	pthread_mutex_lock(&running_mutex);
-				    running_threads++;
-				    pthread_mutex_unlock(&running_mutex);
-				 	
+				 	pthread_create(&thread_id[i], NULL, executeCommands, commands[i]); 				 	
 				 }		
-				while (running_threads > 0)
-				  {
-				     sleep(1);
-				  }
+				for(j=0; j < count; j++)
+				   {
+				      pthread_join( thread_id[j], NULL);
+				   } 
 
 			 }//end of the while loop
 		}
