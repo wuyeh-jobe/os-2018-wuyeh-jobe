@@ -28,12 +28,19 @@ void error(){
 	char error_message[30] = "An error has occurred\n";
     write(STDERR_FILENO, error_message, strlen(error_message)); 
 }
+
+char *paths[10];
+int pathsCount = 2;
+int pathInvoked = 0;
 void *executeCommands(void *l){
-    char *paths[10];
+
+    if(pathInvoked==0){
+		paths[0] = "/bin";
+		paths[1] = "/usr/bin";
+	}
+	
     char *line = (char *) l;
-    paths[0] = "/bin";
-	paths[1] = "/usr/bin";
-	int pathsCount = 2;
+   
     //------------------
 	//Remove new line chracter using defined funtion above
 	remove_newline_ch(line);			
@@ -54,6 +61,7 @@ void *executeCommands(void *l){
    }
 	if (strcmp(arg[0], "path") == 0){
 		pathsCount = 0;
+		pathInvoked = 1;
 		for(int j = 1;j<count;j++){
 				paths[j-1] = malloc(strlen(arg[j])+1);
 				strcpy(paths[j-1], arg[j]);
