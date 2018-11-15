@@ -221,7 +221,8 @@ int main(int argc, char *argv[])
 			 }//end of the while loop
 		}
 		else{
-			printf("%s\n", "Only two arguments are allowed");
+			error();
+			//printf("%s\n", "Only two arguments are allowed");
 		}
 
 	 return 0; 
